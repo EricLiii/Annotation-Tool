@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 """
-Created on Tue Mar 12 12:46:06 2019
+Created on Mon Apr 22 2019
 
-@author: ddang
+@author: Zefeng
 
-Verify a built dataset.
+Create & modify annotation(for yolo)
 """
 
 import os
@@ -12,14 +12,14 @@ import cv2
 
 class DatasetVerifier():
     def __init__(self):
-        self.WindowName = 'Image'
+        #self.WindowName = 'Image'
         self.ExistingRects = []
         self.FirstCorner = None
         self.SecondCorner = None
         
-        cv2.namedWindow(self.WindowName)
+        #cv2.namedWindow(self.WindowName)
         
-        cv2.setMouseCallback(self.WindowName, self.onMouseClicked, 0)
+        #cv2.setMouseCallback(self.WindowName, self.onMouseClicked, 0)
     
     def verifyDataset(self, folderPath, resizeRatio):
     
@@ -123,7 +123,7 @@ class DatasetVerifier():
             cv2.rectangle(image, self.FirstCorner, self.SecondCorner, (0, 0, 255))
         
         # Show everything
-        cv2.imshow(self.WindowName, image)
+        #cv2.imshow(self.WindowName, image)
         #return image
      
     '''
