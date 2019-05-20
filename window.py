@@ -12,8 +12,8 @@ from PySide2.QtWidgets import QApplication, QLabel, QPushButton, QVBoxLayout, QW
 from PySide2.QtCore import Slot, Qt, QObject, QFile, QRectF, QPoint
 from PySide2.QtUiTools import QUiLoader
 
-import label_yolo_
-from label_yolo_ import DatasetVerifier
+#import label_yolo_
+#from label_yolo_ import DatasetVerifier
 
 #Remember to delete the first line of this file if you generate this file by using anaconda virtual env.
 from window.ui_mainwindow import Ui_MainWindow 
@@ -170,9 +170,11 @@ class MyWidget(QMainWindow):
         self.imgarea_width = 0
         self.imgarea_height = 0
         self.imgarea_pos = QPoint(0, 0)
+        #self.centralWidget_pos = self.ui.centralWidget.pos()
+        #self.event_pos = QPoint(0, 0)
+        self.lefttop_corner = QPoint(0, 0)
+        self.rightbottom_corner = QPoint(0, 0)
 
-        self.cursor_pos = QPoint(0, 0)
-        
         # Connecting the signals
         #self.ui.btn_next("btn")
         self.ui.btn_next.clicked.connect(self.next_frame)
@@ -184,37 +186,50 @@ class MyWidget(QMainWindow):
         self.ui.act_openfile.triggered.connect(self.load_file)
         self.ui.act_opendir.triggered.connect(self.open_dir)
 
-        self.ui.label_tool = label_yolo_.DatasetVerifier()
-
+        #self.ui.label_tool = label_yolo_.DatasetVerifier()
+        #self.ui.img_area.setMouseTracking(True)
         #self.window.show()
+        
 
     def mousePressEvent(self, event):
         #if event.type() == QtCore.QEvent.MouseButtonPress:
         if event.button() == Qt.LeftButton:
             print("left")
             print(self.ui.img_area.pos())
-            print(self.ui.img_area.size())
+            #print(self.ui.img_area.size())
             print(event.pos())
-            self.cursor_pos = event.pos()
+            self.lefttop_corner = event.pos()
+            #tl = self.cursor_pos.x() - self.centralWidget_pos.x() - self.imgarea_pos.x()
+            #rb = self.cursor_pos.y() - self.centralWidget_pos.y() - self.imgarea_pos.y()
+
         if event.button() == Qt.RightButton:
             print("right")
+    
+    def mouseMoveEvent(self, event):
+        #self.rightbottom_corner = event.pos()
+        x = self.rightbottom_corner.x()
+        y = self.rightbottom_corner.y()
+        #print("-- ", x, y)
 
-    '''
-    def onMouseClicked(self, event, x, y, flags, param):
-        if event == cv2.EVENT_LBUTTONDOWN:
-            self.FirstCorner = (x, y)
-            
-        elif event == cv2.EVENT_LBUTTONUP:
-            self.SecondCorner = (x, y)
-            
-            self.drawRectsAndDisplay()
-            
-        elif event == cv2.EVENT_RBUTTONDOWN:
-            if self.deleteSelectedExistingRects((x, y)) == -1: # delete the newly drawn rect
-                self.resetDrawing()
-                
-            self.drawRectsAndDisplay()
-    '''
+        #TODO: update rect while mouse moving
+        #self.clear_rects()
+        #self.calculate_bbox_pos()
+        #self.draw_img()
+
+    def mouseReleaseEvent(self, event):
+        self.clear_rects()
+        self.rightbottom_corner = event.pos()
+        self.scale_img()
+        self.calculate_bbox_pos()
+        self.draw_img()
+    
+    #TODO: creating a new area which contains the categories of labels; if no label is chosen, return nothing.
+
+    def resizeEvent(self, event):
+        if self.ui.img_area.pixmap():
+            self.scale_img()
+            #self.calculate_bbox_pos()
+            self.draw_img()
 
     @Slot()
 
@@ -238,8 +253,8 @@ class MyWidget(QMainWindow):
     def save_label(self, path):
         self.keep_labeling = False
 
-    def delete_label(self, path):
-        pass
+    def delete_label(self):
+        self.ui.img_area.clear()
 
     def close_window(self):
         sys.exit(app.exec_())
@@ -340,14 +355,7 @@ class MyWidget(QMainWindow):
     def load_bbox():
         pass
 
-
-
     def load_one_frame(self):
-        #get the size of current image area
-        self.imgarea_width = self.ui.img_area.width()
-        self.imgarea_height = self.ui.img_area.height()
-        self.imgarea_pos = self.ui.img_area.pos()
-
         if self.frame_index < 0:
             print("Error: index < 0")
             return
@@ -371,40 +379,68 @@ class MyWidget(QMainWindow):
             save_path = self.file_name + "/frame{}.jpg".format(str(self.frame_index).zfill(self.num_digits))
             if os.path.isfile(save_path) == False:
                 cv2.imwrite(save_path, cur_img) 
-            pixmap = QPixmap(save_path)
-            self.res_pixmap = pixmap.scaled(self.ui.img_area.width(), self.ui.img_area.height(), Qt.KeepAspectRatio)
-            self.ui.img_area.setAlignment(Qt.AlignCenter)
-            #TODO: reszie image size dynamically
-            res_width = self.res_pixmap.width()
-            res_height = self.res_pixmap.height()
-            
-            if res_width == self.imgarea_width:
-                res_pos_x = self.imgarea_pos.x()
-                res_pos_y = self.imgarea_pos.y() + self.imgarea_height/2 - res_height/2
-                print("width", res_pos_x, res_pos_y)
-            elif res_height == self.imgarea_height:
-                res_pos_x = self.imgarea_pos.x() + self.imgarea_width/2 - res_width/2
-                res_pos_y = self.imgarea_pos.y()
-                print("height", res_pos_x, res_pos_y)
+            self.pixmap = QPixmap(save_path)
+            self.raw_img = self.pixmap.copy()
 
-            bbox_pos_x = self.cursor_pos.x()-res_pos_x
-            bbox_pos_y = self.cursor_pos.y()-res_pos_y
-            rect = QRectF(bbox_pos_x, bbox_pos_y, res_width/2, res_height/2) 
-            #TODO: if window size changes, QRec size should change accordingly. So need to calculate the ratio. 
-            painter = QPainter(self.res_pixmap)
-            painter.setPen(QPen(Qt.blue, 2))
+            self.scale_img()
+            self.calculate_bbox_pos()    
+            self.draw_img()
             
-            painter.drawRect(rect)
-            self.ui.img_area.setPixmap(self.res_pixmap)
-            
-    '''
-    def paintEvent(self, event):
-        rect = QRectF(100,100,200,200)
+    def scale_img(self):
+        self.imgarea_width = self.ui.img_area.width()
+        self.imgarea_height = self.ui.img_area.height()
+        self.imgarea_pos = self.ui.img_area.pos()
+
+        self.res_pixmap = self.pixmap.scaled(self.ui.img_area.width(), self.ui.img_area.height(), Qt.KeepAspectRatio)
+        self.ui.img_area.setAlignment(Qt.AlignCenter)
+
+        self.res_width = self.res_pixmap.width()
+        self.res_height = self.res_pixmap.height()
+
+        if self.res_width == self.imgarea_width:
+            self.centralWidget_pos = self.ui.centralWidget.pos()
+            self.res_pos_x = self.centralWidget_pos.x() + self.imgarea_pos.x()
+            self.res_pos_y = self.centralWidget_pos.y() + self.imgarea_pos.y() + self.imgarea_height/2 - self.res_height/2
+            print("width", self.res_pos_x, self.res_pos_y)
+        elif self.res_height == self.imgarea_height:
+            self.centralWidget_pos = self.ui.centralWidget.pos()
+            self.res_pos_x = self.imgarea_pos.x() + self.imgarea_width/2 - self.res_width/2
+            self.res_pos_y = self.centralWidget_pos.y() + self.imgarea_pos.y()
+            print("height", self.res_pos_x, self.res_pos_y)
+
+    def calculate_bbox_pos(self):
+        self.bbox_pos_x = self.lefttop_corner.x()-self.res_pos_x
+        self.bbox_pos_y = self.lefttop_corner.y()-self.res_pos_y
+        self.bbox_width = self.rightbottom_corner.x() - self.lefttop_corner.x()
+        self.bbox_height = self.rightbottom_corner.y() - self.lefttop_corner.y()
+
+        self.calculate_bbox_ratio()
+
+    def calculate_bbox_ratio(self):
+        self.bbox_pos_x_ratio = self.bbox_pos_x / self.res_width
+        self.bbox_pos_y_ratio = self.bbox_pos_y / self.res_height
+        self.bbox_width_ratio = self.bbox_width / self.res_width
+        self.bbox_height_ratio = self.bbox_height / self.res_height
+
+    def draw_img(self):
+        _bbox_pos_x = self.res_width * self.bbox_pos_x_ratio
+        _bbox_pos_y = self.res_height * self.bbox_pos_y_ratio
+        _bbox_width = self.res_width * self.bbox_width_ratio
+        _bbox_height = self.res_height * self.bbox_height_ratio
+
+        self.rect = QRectF(_bbox_pos_x, _bbox_pos_y, _bbox_width, _bbox_height)
         painter = QPainter(self.res_pixmap)
-        painter.setPen(QPen(Qt.blue, 5))
+        painter.setPen(QPen(Qt.blue, 2))
         
-        painter.drawRect(rect)
-    '''
+        painter.drawRect(self.rect)
+        self.ui.img_area.setPixmap(self.res_pixmap)
+
+    def clear_rects(self):
+        #self.painter.end()
+        self.pixmap = self.raw_img.copy()
+        self.ui.img_area.clear()
+        print("clear")
+
     def unlock_loop(self):
         self.wait = False
 
@@ -415,3 +451,7 @@ if __name__ == "__main__":
     #label_tool = label_yolo_.DatasetVerifier()
     widget.show()
     sys.exit(app.exec_())
+
+
+#TODO: 1. multi bboxes
+#      2. multi labels

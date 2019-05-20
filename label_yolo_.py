@@ -12,14 +12,14 @@ import cv2
 
 class DatasetVerifier():
     def __init__(self):
-        #self.WindowName = 'Image'
+        self.WindowName = 'Image'
         self.ExistingRects = []
         self.FirstCorner = None
         self.SecondCorner = None
         
-        #cv2.namedWindow(self.WindowName)
+        cv2.namedWindow(self.WindowName)
         
-        #cv2.setMouseCallback(self.WindowName, self.onMouseClicked, 0)
+        cv2.setMouseCallback(self.WindowName, self.onMouseClicked, 0)
     
     def verifyDataset(self, folderPath, resizeRatio):
     
@@ -35,7 +35,7 @@ class DatasetVerifier():
             txt_name = os.path.splitext(filename)[0]+".txt"
             #TODO: check file exists or not first 
             txt_path = os.path.join(self.FolderPath, txt_name).replace('\\', '/')
-            print(txt_path)
+            #print(txt_path)
             txt_file = open(txt_path, "w")
             txt_file.close()
             file_path = os.path.join(self.FolderPath, filename).replace('\\', '/')
@@ -123,7 +123,7 @@ class DatasetVerifier():
             cv2.rectangle(image, self.FirstCorner, self.SecondCorner, (0, 0, 255))
         
         # Show everything
-        #cv2.imshow(self.WindowName, image)
+        cv2.imshow(self.WindowName, image)
         #return image
      
     '''
@@ -182,7 +182,7 @@ if __name__ == '__main__':
           Right click anywhere else to delete the newly drawn (haven not been saved) rectangle.\n'
           )
     
-    datasetFolderPath = 'd:/dangdang/DataDNN/ShipSmoke/yolo_dataset/ManuallyCropped/psa_20190218_162533_183'
+    datasetFolderPath = 'D:/SamplesOfVideos/cache'
     resizeRatio = 2 # From original -> display
     
     verifier = DatasetVerifier()
