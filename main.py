@@ -595,7 +595,6 @@ class AppWindow(QMainWindow):
         self.total_frames = self.cap.get(7)
         self.show_info(self.ui.label_totalFrames_2, str(int(self.total_frames)))
         self.num_digits = len(str(int(self.total_frames)))
-        #success, _ = cap.read()
         self.count = 0 #TODO: count should start from current frame index
 
         if self.ui.plainTextEdit_frameStep.toPlainText() != "":
