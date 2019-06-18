@@ -1,6 +1,6 @@
 # Annotation_Tool
 
-An annotation tool for YOLO
+A very simple annotation tool for YOLO. 
 
 How to use:
 
