@@ -1,4 +1,4 @@
-# Annotation_Tool
+# Annotation_Tool (Updating)
 
 A very simple annotation tool for YOLO, supporting not only labelling images in folder but also labelling videos directly.
 
