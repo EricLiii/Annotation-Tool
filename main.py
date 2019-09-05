@@ -5,6 +5,7 @@ Created on June 2019
 
 @author: Zefeng
 """
+#put most of the code in one file because I'm too lazy to split it :)
 
 import os
 import cv2
